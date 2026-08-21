@@ -1,0 +1,1 @@
+{"version":3,"file":"delegation.d.ts","sourceRoot":"","sources":["../src/delegation.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,gBAAgB,EAAE,cAAc,EAAE,QAAQ,EAAE,mBAAmB,EAAE,MAAM,YAAY,CAAA;AAEjG,wBAAgB,uBAAuB,CAAC,GAAG,EAAE,OAAO,GAAG,mBAAmB,GAAG,SAAS,CAkBrF;AAED,wBAAgB,gBAAgB,CAC9B,QAAQ,EAAE,QAAQ,EAClB,OAAO,EAAE,mBAAmB,GAAG,SAAS,EACxC,MAAM,EAAE,cAAc,GACrB,gBAAgB,CAqClB"}

@@ -1,0 +1,48 @@
+- insert:
+  - id: smart-runtime
+    name: dsh-smart-runtime
+    config:
+      enabled: true
+      persistentState: true
+      strategyRouting: true
+      planning: true
+      contextInjection: true
+      contextLayering: true
+      contextRefreshEverySteps: 4
+      contextMaxChars: 7600
+      evidencePreviewChars: 420
+      maxEvidenceItems: 10
+      maxArchiveCheckpointItems: 6
+      verification: true
+      verificationMinScore: 0.64
+      maxVerificationRounds: 2
+      reflection: true
+      reflectionErrorThreshold: 2
+      reflectionFailureThreshold: 2
+      maxReflectionRounds: 2
+      livenessGuard: true
+      repeatedToolSoftRun: 3
+      repeatedToolHardRun: 8
+      maxStopSteers: 3
+      maxSameEvidenceStopVisits: 2
+      softMaxStepsPerTurn: 18
+      hardMaxStepsPerTurn: 28
+      maxToolCallsPerTurn: 48
+      maxErrorsPerTurn: 8
+      maxDurationMs: 900000
+      maxNoProgressSteps: 8
+      verifyStrategies:
+        - research
+        - code
+        - analysis
+        - design
+        - long-task
+      delegationHints: true
+      subagentIsolationHints: true
+      preferredCodeProviders:
+        - codex
+        - claude-code
+      preferredResearchProviders:
+        - spawn
+        - fork
+      telemetry: true
