@@ -1,6 +1,6 @@
 {
   "name": "dsh-smart-runtime",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "DeepSeek Harness smart runtime plugin with durable goal/plan/world-state, five-layer bounded context, anti-stall liveness guards, bounded stop verification, conditional reflection and subagent-aware orchestration.",
   "type": "module",
   "main": "./dist/index.js",
