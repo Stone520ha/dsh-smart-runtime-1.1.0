@@ -18,7 +18,7 @@
     ],
     "typeRoots": [
       "./types",
-      "/opt/nvm/versions/node/v22.16.0/lib/node_modules/ts-node/node_modules/@types"
+      "./node_modules/@types"
     ]
   },
   "include": [
