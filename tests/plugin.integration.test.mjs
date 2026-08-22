@@ -5,6 +5,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+const statePath = path.join(root, '.test-smart-runtime-state.json')
+await fs.rm(statePath, { force: true })
 const mockDir = path.join(root, 'node_modules', '@deepseek-ai', 'dsh-llm')
 await fs.mkdir(mockDir, { recursive: true })
 await fs.writeFile(path.join(mockDir, 'package.json'), JSON.stringify({ name:'@deepseek-ai/dsh-llm', type:'module', exports:'./index.js' }))
@@ -35,7 +37,7 @@ function makeContext() {
 
 function baseConfig() {
   return {
-    enabled:true,persistentState:true,strategyRouting:true,planning:true,contextInjection:true,
+    enabled:true,persistentState:true,statePath,strategyRouting:true,planning:true,contextInjection:true,
     contextLayering:true,contextRefreshEverySteps:4,contextMaxChars:7000,evidencePreviewChars:420,maxEvidenceItems:10,maxArchiveCheckpointItems:6,
     verification:true,verificationMinScore:.62,maxVerificationRounds:2,reflection:true,
     reflectionErrorThreshold:2,reflectionFailureThreshold:2,maxReflectionRounds:2,livenessGuard:true,repeatedToolSoftRun:3,repeatedToolHardRun:8,maxStopSteers:3,maxSameEvidenceStopVisits:2,
@@ -45,7 +47,7 @@ function baseConfig() {
   }
 }
 
-test('plugin wires pre-step, persistence, tool observation and stop verification', async () => {
+test('plugin wires pre-step, sidecar persistence, tool observation and stop verification', async () => {
   const ctx = makeContext()
   applySmartRuntime(ctx, baseConfig())
   assert.ok(ctx.listeners.has('agent/pre-step'))
@@ -60,7 +62,7 @@ test('plugin wires pre-step, persistence, tool observation and stop verification
   const decision = await pre({agent,messages:[userMessage],turn:1,step:1,signal:new AbortController().signal}, async()=>({kind:'enter',messages:[userMessage]}))
   assert.equal(decision.kind,'enter')
   assert.ok(decision.messages.length >= 2)
-  assert.ok(session.events.some(e => e.type === 'smart-runtime/snapshot'))
+  assert.equal(session.events.length, 0)
 
   const post = ctx.listeners.get('tools/post-execute')[0]
   await post(
@@ -68,7 +70,7 @@ test('plugin wires pre-step, persistence, tool observation and stop verification
     { isError:false, value:{ok:true}, content:[{type:'text',text:'source file'}] },
     async()=>({kind:'accept'}),
   )
-  assert.ok(session.events.some(e => e.type === 'smart-runtime/observation'))
+  assert.equal(session.events.length, 0)
 
   const stopping = ctx.listeners.get('agent/turn-stopping')[0]
   await stopping({agent,turn:1,signal:new AbortController().signal})
@@ -111,7 +113,7 @@ test('stop verification cannot self-loop forever without new evidence', async ()
   assert.match(steered[1].content[0].text,/liveness recovery/i)
   await stopping({agent,turn:1,signal:new AbortController().signal})
   assert.equal(steered.length,2)
-  assert.ok(session.events.some(e => e.type==='smart-runtime/checkpoint' && /bounded convergence/.test(e.data.checkpoint.note)))
+  assert.equal(session.events.length, 0)
 })
 
 test('identical tool outcome replay is rejected through pre-step liveness guard', async () => {
