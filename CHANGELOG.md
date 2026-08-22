@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.2 - 2026-08-22
+
+- Moved durable Smart Runtime state out of DSH session logs into a sidecar JSON store.
+- Stopped writing downstream `smart-runtime/*` session event types that DSH cannot safely reload across plugin changes.
+- Retained one-time import support for legacy Smart Runtime session records after they are marked ignorable.
+
 ## 1.1.1 - 2026-08-22
 
 - Fixed dependency ranges for the current public DSH `0.1.1-rc.2` runtime, Cordis `4.0.1`, and Schemastery `3.18.1`.
