@@ -1,6 +1,7 @@
 - insert:
   - id: smart-runtime
     name: dsh-smart-runtime
+    inject: [subagents]
     config:
       enabled: true
       persistentState: true
