@@ -33,7 +33,7 @@ export function applySmartRuntime(ctx: Context, rawConfig: Config): void {
   const config = resolveConfig(rawConfig)
   if (!config.enabled) return
 
-  const repository = new StateRepository(config.persistentState)
+  const repository = new StateRepository(config.persistentState, config.statePath)
   const activeTurn = new WeakMap<Agent, number>()
   const subagents = discoverSubagentService(ctx)
 

@@ -1,9 +1,16 @@
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { dirname, join } from 'node:path';
 import { createGoal } from './goal.js';
 import { createPlan, updatePlan } from './planner.js';
 import { hashText, now } from './util.js';
 export const EVENT_SNAPSHOT = 'smart-runtime/snapshot';
 export const EVENT_OBSERVATION = 'smart-runtime/observation';
 export const EVENT_CHECKPOINT = 'smart-runtime/checkpoint';
+export function defaultStatePath() {
+    const home = process.env.DSH_HOME || join(homedir(), '.dsh');
+    return join(home, 'smart-runtime', 'state.json');
+}
 export function createFreshState(input) {
     const at = now();
     return {
@@ -51,16 +58,30 @@ export function freshLiveness() {
 export class StateRepository {
     persistent;
     cache = new WeakMap();
-    constructor(persistent) {
+    stored = new Map();
+    statePath;
+    constructor(persistent, statePath = defaultStatePath()) {
         this.persistent = persistent;
+        if (!persistent)
+            return;
+        this.statePath = statePath;
+        this.load();
     }
     get(session, turn) {
         const cached = this.cache.get(session)?.get(turn);
         if (cached)
             return cached;
+        const stored = this.stored.get(this.key(session, turn));
+        if (stored) {
+            const restored = structuredClone(stored);
+            this.putCache(session, turn, restored);
+            return restored;
+        }
         const folded = foldRuntimeState(session, turn);
-        if (folded)
+        if (folded) {
             this.putCache(session, turn, folded);
+            this.persist(session, folded);
+        }
         return folded;
     }
     initialize(session, input) {
@@ -88,7 +109,6 @@ export class StateRepository {
         state.lastUpdatedAt = now();
         this.putCache(session, state.turn, state);
         if (this.persistent) {
-            appendEvent(session, EVENT_OBSERVATION, { version: 1, observation });
             this.saveSnapshot(session, state);
         }
     }
@@ -99,14 +119,13 @@ export class StateRepository {
         state.lastUpdatedAt = now();
         this.putCache(session, state.turn, state);
         if (this.persistent) {
-            appendEvent(session, EVENT_CHECKPOINT, { version: 1, checkpoint });
             this.saveSnapshot(session, state);
         }
     }
     saveSnapshot(session, state) {
         if (!this.persistent)
             return;
-        appendEvent(session, EVENT_SNAPSHOT, snapshotOf(state));
+        this.persist(session, state);
     }
     dispose(session) {
         this.cache.delete(session);
@@ -123,6 +142,30 @@ export class StateRepository {
             if (oldest !== undefined)
                 byTurn.delete(oldest);
         }
+    }
+    key(session, turn) {
+        return `${session.id}:${turn}`;
+    }
+    load() {
+        if (!this.statePath || !existsSync(this.statePath))
+            return;
+        try {
+            const parsed = JSON.parse(readFileSync(this.statePath, 'utf8'));
+            if (parsed.version !== 1 || !isObject(parsed.states))
+                return;
+            for (const [key, state] of Object.entries(parsed.states))
+                this.stored.set(key, state);
+        }
+        catch {
+            // Optional runtime state must never block a conversation from resuming.
+        }
+    }
+    persist(session, state) {
+        if (!this.persistent || !this.statePath)
+            return;
+        this.stored.set(this.key(session, state.turn), structuredClone(state));
+        mkdirSync(dirname(this.statePath), { recursive: true });
+        writeFileSync(this.statePath, JSON.stringify({ version: 1, states: Object.fromEntries(this.stored) }), 'utf8');
     }
 }
 export function foldRuntimeState(session, turn) {
@@ -200,9 +243,6 @@ function normalizeBudget(budget) {
         maxRepeatedOutcomeRun: legacy.maxRepeatedOutcomeRun ?? 0,
         currentRepeatedOutcomeRun: legacy.currentRepeatedOutcomeRun ?? 0,
     };
-}
-function appendEvent(session, type, data) {
-    session.append(type, data);
 }
 function isObject(value) {
     return typeof value === 'object' && value !== null && !Array.isArray(value);

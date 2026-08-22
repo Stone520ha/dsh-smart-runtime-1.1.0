@@ -2,6 +2,7 @@ import type { BudgetState, Checkpoint, GoalState, LivenessState, PlanItem, Runti
 export declare const EVENT_SNAPSHOT = "smart-runtime/snapshot";
 export declare const EVENT_OBSERVATION = "smart-runtime/observation";
 export declare const EVENT_CHECKPOINT = "smart-runtime/checkpoint";
+export declare function defaultStatePath(): string;
 export interface FreshStateInput {
     sessionId: string;
     turn: number;
@@ -16,7 +17,9 @@ export declare function freshLiveness(): LivenessState;
 export declare class StateRepository {
     private readonly persistent;
     private readonly cache;
-    constructor(persistent: boolean);
+    private readonly stored;
+    private readonly statePath?;
+    constructor(persistent: boolean, statePath?: string);
     get(session: SessionLike, turn: number): RuntimeState | undefined;
     initialize(session: SessionLike, input: FreshStateInput): RuntimeState;
     mutate(session: SessionLike, state: RuntimeState, mutator: (draft: RuntimeState) => void, persist?: boolean): RuntimeState;
@@ -25,6 +28,9 @@ export declare class StateRepository {
     saveSnapshot(session: SessionLike, state: RuntimeState): void;
     dispose(session: SessionLike): void;
     private putCache;
+    private key;
+    private load;
+    private persist;
 }
 export declare function foldRuntimeState(session: SessionLike, turn: number): RuntimeState | undefined;
 export declare function snapshotOf(state: RuntimeState): RuntimeSnapshotEvent;

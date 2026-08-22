@@ -158,6 +158,7 @@ export interface CheckpointEvent {
 export interface Config {
   enabled?: boolean
   persistentState?: boolean
+  statePath?: string
   strategyRouting?: boolean
   planning?: boolean
   contextInjection?: boolean
@@ -196,6 +197,7 @@ export interface Config {
 export interface ResolvedConfig {
   enabled: boolean
   persistentState: boolean
+  statePath: string
   strategyRouting: boolean
   planning: boolean
   contextInjection: boolean
