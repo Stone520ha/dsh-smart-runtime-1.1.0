@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.1 - 2026-08-22
+
+- Fixed dependency ranges for the current public DSH `0.1.1-rc.2` runtime, Cordis `4.0.1`, and Schemastery `3.18.1`.
+- Declared the required `subagents` service injection in `cordis.patch.yml` so fresh profile installation succeeds.
+- Added the missing TypeScript development toolchain and a portable Node type path so checks and builds work after a clean clone.
+- Verified the packaged plugin against a single DSH instance with 44 unit/integration tests and a live lifecycle smoke test.
+
 ## 1.1.0 - 2026-08-20
 
 - Added anti-stall liveness subsystem.
