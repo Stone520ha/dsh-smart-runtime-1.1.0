@@ -1,6 +1,15 @@
-# dsh-smart-runtime 1.1.0
+# dsh-smart-runtime 1.1.1
 
 一个遵循 DeepSeek Harness（dsh）“Everything is a Plugin”原则的 Smart Runtime 插件。它**不 fork `@deepseek-ai/dsh-agent-loop`**，而是在官方 `agent/*`、`tools/*`、Session event 扩展点上增强目标管理、上下文、验证、反思和防卡死能力。
+
+## 1.1.1 兼容性修复
+
+`1.1.1` 修正了 `1.1.0` 的两个安装问题：
+
+- 依赖范围已对齐当前公开的 DSH `0.1.1-rc.2`、Cordis `4.0.1` 和 Schemastery `3.18.1`。
+- `cordis.patch.yml` 已声明必需的 `subagents` 注入，新 profile 不再因缺少服务声明而启动失败。
+
+功能代码与 `1.1.0` 保持一致，并已通过 44 项测试和真实 DSH 生命周期冒烟。
 
 ## 1.1.0 为什么升级
 
@@ -193,8 +202,20 @@ parent = 汇总 findings + source identifiers + uncertainty + conflicts
 
 ## 安装
 
+先下载源码并生成可安装包：
+
 ```bash
-dsh plugin --profile <profile> add ./dsh-smart-runtime-1.1.0.tgz
+git clone https://github.com/Stone520ha/dsh-smart-runtime-1.1.0.git
+cd dsh-smart-runtime-1.1.0
+npm install
+npm run check
+npm pack
+```
+
+再安装到目标 profile：
+
+```bash
+dsh plugin --profile <profile> add ./dsh-smart-runtime-1.1.1.tgz
 ```
 
 检查：
@@ -262,8 +283,8 @@ npm test
 npm run pack:check
 ```
 
-1.1.0 包含 Router、Goal、Plan、Budget、Context、World State、Verifier、Reflection、Persistence、Liveness 以及 DSH lifecycle mock integration tests。
+1.1.1 包含 Router、Goal、Plan、Budget、Context、World State、Verifier、Reflection、Persistence、Liveness 以及 DSH lifecycle mock integration tests。
 
 ## 兼容目标
 
-按 DeepSeek Harness 当前 `0.1.0-rc.8` 公共扩展接口设计。Harness 仍是 Developer Preview，部署请 pin rc 版本并在升级前跑完整测试。靠祈祷兼容性通常是最便宜也最昂贵的发布流程。
+按 DeepSeek Harness 当前 `0.1.1-rc.2` 公共扩展接口验证。Harness 仍是 Developer Preview，部署请锁定已验证版本并在升级前跑完整测试。靠祈祷兼容性通常是最便宜也最昂贵的发布流程。
