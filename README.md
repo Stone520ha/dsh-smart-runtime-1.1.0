@@ -69,15 +69,13 @@ Reflection state
 Checkpoints
 ```
 
-写入：
+`1.1.2` 起，持久状态写入独立 sidecar 文件，默认位置为：
 
 ```text
-smart-runtime/snapshot
-smart-runtime/observation
-smart-runtime/checkpoint
+$DSH_HOME/smart-runtime/state.json
 ```
 
-支持 resume/fork 后恢复，并兼容 v1.0 observation event，升级时会补生成 `outcomeFingerprint`。
+不再向 DSH Session 日志写入 `smart-runtime/*` 自定义事件，避免插件变更导致历史无法恢复。旧事件在安全迁移为 `ignorable` 后仍可导入，并兼容 v1.0 observation event，升级时会补生成 `outcomeFingerprint`。
 
 ### Five-layer bounded context
 
@@ -258,6 +256,7 @@ Smart Runtime 负责策略、状态、隔离建议、父级验收；实际鉴权
 | 参数 | 默认 | 作用 |
 |---|---:|---|
 | `contextLayering` | `true` | 启用五层 working context |
+| `statePath` | `$DSH_HOME/smart-runtime/state.json` | Smart Runtime sidecar 持久化位置 |
 | `contextRefreshEverySteps` | `4` | Context 重投影频率 |
 | `contextMaxChars` | `7600` | Smart Runtime context 上限 |
 | `verificationMinScore` | `0.64` | Verifier 最低分 |
