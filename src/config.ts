@@ -1,11 +1,13 @@
 import z from '@deepseek-ai/schemastery'
 import type { Config, ResolvedConfig, Strategy } from './types.js'
+import { defaultStatePath } from './state.js'
 
 const DEFAULT_VERIFY: Strategy[] = ['research', 'code', 'analysis', 'design', 'long-task']
 
 export const ConfigSchema = z.object({
   enabled: z.boolean().default(true),
   persistentState: z.boolean().default(true),
+  statePath: z.string().default(defaultStatePath()),
   strategyRouting: z.boolean().default(true),
   planning: z.boolean().default(true),
   contextInjection: z.boolean().default(true),
@@ -45,6 +47,7 @@ export function resolveConfig(raw: Config): ResolvedConfig {
   const config: ResolvedConfig = {
     enabled: raw.enabled ?? true,
     persistentState: raw.persistentState ?? true,
+    statePath: raw.statePath ?? defaultStatePath(),
     strategyRouting: raw.strategyRouting ?? true,
     planning: raw.planning ?? true,
     contextInjection: raw.contextInjection ?? true,
