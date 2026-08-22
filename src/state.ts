@@ -1,3 +1,6 @@
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { homedir } from 'node:os'
+import { dirname, join } from 'node:path'
 import type {
   BudgetState,
   Checkpoint,
@@ -19,6 +22,16 @@ import { hashText, now } from './util.js'
 export const EVENT_SNAPSHOT = 'smart-runtime/snapshot'
 export const EVENT_OBSERVATION = 'smart-runtime/observation'
 export const EVENT_CHECKPOINT = 'smart-runtime/checkpoint'
+
+interface StoredStates {
+  version: 1
+  states: Record<string, RuntimeState>
+}
+
+export function defaultStatePath(): string {
+  const home = process.env.DSH_HOME || join(homedir(), '.dsh')
+  return join(home, 'smart-runtime', 'state.json')
+}
 
 export interface FreshStateInput {
   sessionId: string
@@ -78,14 +91,29 @@ export function freshLiveness(): LivenessState {
 
 export class StateRepository {
   private readonly cache = new WeakMap<object, Map<number, RuntimeState>>()
+  private readonly stored = new Map<string, RuntimeState>()
+  private readonly statePath?: string
 
-  constructor(private readonly persistent: boolean) {}
+  constructor(private readonly persistent: boolean, statePath = defaultStatePath()) {
+    if (!persistent) return
+    this.statePath = statePath
+    this.load()
+  }
 
   get(session: SessionLike, turn: number): RuntimeState | undefined {
     const cached = this.cache.get(session as object)?.get(turn)
     if (cached) return cached
+    const stored = this.stored.get(this.key(session, turn))
+    if (stored) {
+      const restored = structuredClone(stored)
+      this.putCache(session, turn, restored)
+      return restored
+    }
     const folded = foldRuntimeState(session, turn)
-    if (folded) this.putCache(session, turn, folded)
+    if (folded) {
+      this.putCache(session, turn, folded)
+      this.persist(session, folded)
+    }
     return folded
   }
 
@@ -113,7 +141,6 @@ export class StateRepository {
     state.lastUpdatedAt = now()
     this.putCache(session, state.turn, state)
     if (this.persistent) {
-      appendEvent(session, EVENT_OBSERVATION, { version: 1, observation } satisfies ObservationEvent)
       this.saveSnapshot(session, state)
     }
   }
@@ -124,14 +151,13 @@ export class StateRepository {
     state.lastUpdatedAt = now()
     this.putCache(session, state.turn, state)
     if (this.persistent) {
-      appendEvent(session, EVENT_CHECKPOINT, { version: 1, checkpoint } satisfies CheckpointEvent)
       this.saveSnapshot(session, state)
     }
   }
 
   saveSnapshot(session: SessionLike, state: RuntimeState): void {
     if (!this.persistent) return
-    appendEvent(session, EVENT_SNAPSHOT, snapshotOf(state))
+    this.persist(session, state)
   }
 
   dispose(session: SessionLike): void {
@@ -149,6 +175,28 @@ export class StateRepository {
       const oldest = [...byTurn.keys()].sort((a, b) => a - b)[0]
       if (oldest !== undefined) byTurn.delete(oldest)
     }
+  }
+
+  private key(session: SessionLike, turn: number): string {
+    return `${session.id}:${turn}`
+  }
+
+  private load(): void {
+    if (!this.statePath || !existsSync(this.statePath)) return
+    try {
+      const parsed = JSON.parse(readFileSync(this.statePath, 'utf8')) as StoredStates
+      if (parsed.version !== 1 || !isObject(parsed.states)) return
+      for (const [key, state] of Object.entries(parsed.states)) this.stored.set(key, state as RuntimeState)
+    } catch {
+      // Optional runtime state must never block a conversation from resuming.
+    }
+  }
+
+  private persist(session: SessionLike, state: RuntimeState): void {
+    if (!this.persistent || !this.statePath) return
+    this.stored.set(this.key(session, state.turn), structuredClone(state))
+    mkdirSync(dirname(this.statePath), { recursive: true })
+    writeFileSync(this.statePath, JSON.stringify({ version: 1, states: Object.fromEntries(this.stored) } satisfies StoredStates), 'utf8')
   }
 }
 
@@ -229,10 +277,6 @@ function normalizeBudget(budget: BudgetState): BudgetState {
     maxRepeatedOutcomeRun: legacy.maxRepeatedOutcomeRun ?? 0,
     currentRepeatedOutcomeRun: legacy.currentRepeatedOutcomeRun ?? 0,
   }
-}
-
-function appendEvent(session: SessionLike, type: string, data: unknown): void {
-  session.append(type, data)
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
