@@ -17,7 +17,7 @@ export function applySmartRuntime(ctx, rawConfig) {
     const config = resolveConfig(rawConfig);
     if (!config.enabled)
         return;
-    const repository = new StateRepository(config.persistentState);
+    const repository = new StateRepository(config.persistentState, config.statePath);
     const activeTurn = new WeakMap();
     const subagents = discoverSubagentService(ctx);
     ctx.on('agent/pre-step', async ({ agent, messages, turn, step }, next) => {
